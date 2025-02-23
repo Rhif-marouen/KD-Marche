@@ -13,7 +13,12 @@ class CreateProductsTable extends Migration
             $table->string('name');
             $table->decimal('price', 8, 2);
             $table->integer('stock');
-            $table->string('category');
+            $table->text('description')->nullable(); 
+            $table->string('image_url')->nullable();
+            $table->enum('quality', ['A', 'B', 'C', 'D', 'E'])
+            ->nullable()
+            ->comment('Qualité du produit');
+           
             $table->timestamps();
         });
     }
