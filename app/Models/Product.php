@@ -19,6 +19,18 @@ class Product extends Model
         'image_url',
         'quality'
     ];
+    // Dans App\Models\Product
+public function scopeFilter($query, array $filters)
+{
+    $query->when($filters['search'] ?? null, function ($query, $search) {
+        $query->where('name', 'like', "%$search%")
+              ->orWhere('description', 'like', "%$search%");
+    })->when($filters['category'] ?? null, function ($query, $category) {
+        $query->whereHas('category', function ($q) use ($category) {
+            $q->where('name', $category);
+        });
+    });
+}
 
     public function category()
     {

@@ -8,40 +8,31 @@ use App\Http\Resources\ProductResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-
+use App\Http\Resources\PublicProductResource;
 class ProductController extends Controller
 {
     public function __construct()
     {
         $this->middleware(['auth:sanctum', 'admin'])->only(['store', 'update', 'destroy', 'adjustStock']);
-        $this->middleware(['auth:sanctum'])->only(['addToCart']);
+        //$this->middleware(['auth:sanctum'])->only(['addToCart']);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/products",
-     *     summary="Liste paginée des produits",
-     *     @OA\Parameter(
-     *         name="page",
-     *         in="query",
-     *         description="Numéro de page",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Liste des produits")
-     * )
-     */
-    public function index(Request $request): JsonResponse
-    {
-        $perPage = $request->input('per_page', 10);
-        
-        $products = Product::with(['category', 'stockHistory'])
-            ->filter($request->only('search', 'category'))
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+    // Ajouter dans app/Http/Controllers/ProductController.php
+public function index()
+{
+    $products = Product::with('category')
+        ->where('stock', '>', 0)
+        ->paginate(12);
 
-        return ProductResource::collection($products)->response();
-    }
+    return PublicProductResource::collection($products);
+}
+
+// Version admin protégée
+public function adminIndex()
+{
+    $this->authorize('view-admin', Product::class);
+    return ProductResource::collection(Product::with('stockHistory')->paginate(12));
+}
 
     /**
      * @OA\Post(

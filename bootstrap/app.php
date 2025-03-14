@@ -18,6 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
            $middleware->alias([
             'admin' => \App\Http\Middleware\Admin::class, 
         ]);
+
+           // Configuration CORS
+    $middleware->appendToGroup('web', [
+        \Illuminate\Http\Middleware\HandleCors::class,
+    ]);
+
+    $middleware->appendToGroup('api', [
+        \Illuminate\Http\Middleware\HandleCors::class,
+    ]);
+
+  
         
        
     })
