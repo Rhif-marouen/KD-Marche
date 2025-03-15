@@ -10,14 +10,13 @@ use Illuminate\Http\JsonResponse;
 
 class AdminDashboardController extends Controller
 {
-    public function index(): JsonResponse
+    public function stats(): JsonResponse // Renommer index() en stats()
     {
         return response()->json([
-            'stats' => [
-                'users' => User::count(),
-                'active_products' => Product::where('stock', '>', 0)->count(),
-                'total_orders' => Order::count()
-            ]
+            'users' => User::count(),
+            'products' => Product::where('stock', '>', 0)->count(),
+            'orders' => Order::count()
         ]);
     }
+
 }

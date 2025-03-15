@@ -24,6 +24,7 @@ Route::prefix('auth')->middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
+
 /*
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'userProfile']);
@@ -35,4 +36,5 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/dashboard', [AdminDashboardController::class, 'stats']);
     Route::apiResource('/products', AdminProductController::class);
     Route::apiResource('/users', UserController::class);
+    Route::get('/stats', [AdminDashboardController::class, 'stats']);
 });

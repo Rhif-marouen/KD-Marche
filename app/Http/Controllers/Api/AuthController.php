@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -41,7 +42,7 @@ class AuthController extends Controller
     }
 
     // Connexion de l'utilisateur
-    public function login(Request $request)
+  /*  public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email'    => 'required|string|email',
@@ -55,9 +56,9 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         // Vérification de l'utilisateur, du mot de passe et du statut actif
-        if (!$user || !Hash::check($request->password, $user->password) || !$user->is_active) {
+        if (!$user || !Hash::check($request->password, $user->password) || !$user->is_active ) {
             return response()->json(['message' => 'Identifiants invalides ou compte désactivé'], 401);
-        }
+        } 
 
         // Création du token
         $token = $user->createToken('authToken')->plainTextToken;
@@ -65,10 +66,33 @@ class AuthController extends Controller
         return response()->json([
             'user'  => $user,
             'token' => $token,
-            'is_admin' => $user->is_admin
+            
         ], 200);
-    }
+    } */
 
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:8'
+        ]);
+    
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Identifiants invalides'], 401);
+        }
+    
+        $user = $request->user();
+        
+        return response()->json([
+            'token' => $user->createToken('auth-token')->plainTextToken,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'is_admin' => (bool)$user->is_admin // Conversion explicite
+            ]
+        ]);
+    }
     // Retourne le profil de l'utilisateur authentifié
     public function userProfile(Request $request)
     {
