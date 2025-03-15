@@ -28,7 +28,7 @@ class AuthController extends Controller
             'name'      => $request->name,
             'email'     => $request->email,
             'password'  => Hash::make($request->password),
-            'is_active' => true, // Consider changing to false if email verification is required
+            'is_active' => true, 
             'is_admin'  => false,
         ]);
 
