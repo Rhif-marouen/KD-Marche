@@ -7,16 +7,16 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-
+use App\Models\Payment;
 class AdminDashboardController extends Controller
 {
-    public function stats(): JsonResponse // Renommer index() en stats()
+    public function stats()
     {
         return response()->json([
+            'orders' => Order::count(),
             'users' => User::count(),
-            'products' => Product::where('stock', '>', 0)->count(),
-            'orders' => Order::count()
+            'products' => Product::count(),
+            'revenue' => Payment::sum('amount')
         ]);
     }
-
 }
