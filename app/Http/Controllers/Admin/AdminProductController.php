@@ -15,7 +15,7 @@ class AdminProductController extends Controller
      */
     public function index()
     {
-        $products = Product::with(['category', 'stockHistory'])
+        $products = Product::with(['category', ])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
@@ -29,7 +29,7 @@ class AdminProductController extends Controller
     {
         $product = Product::create($request->validated());
         
-        return new ProductResource($product->load('category'));
+        return new ProductResource($product->load('category', 'stockHistory'));
     }
 
     /**

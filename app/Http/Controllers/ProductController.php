@@ -24,7 +24,7 @@ public function index()
         ->where('stock', '>', 0)
         ->paginate(12);
 
-    return PublicProductResource::collection($products);
+    return ProductResource::collection($products);
 }
 
 // Version admin protégée
@@ -108,25 +108,24 @@ public function adminIndex()
      *     @OA\Response(response=403, description="Non autorisé")
      * )
      */
-    public function destroy(Product $product): JsonResponse
-    {
-        try {
-            Gate::authorize('delete', $product);
-            
-            $product->delete();
-
-            return response()->json([
-                'message' => __('Product successfully deleted'),
-                'deleted_id' => $product->id
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => __('Deletion failed'),
-                'details' => $e->getMessage()
-            ], 500);
-        }
+ public function destroy(Product $product)
+{
+    try {
+        $this->authorize('delete', $product);
+        $product->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Produit supprimé.',
+            'deleted_id' => $product->id
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Échec de la suppression.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * @OA\Post(
@@ -183,4 +182,6 @@ public function adminIndex()
 
         return ProductResource::collection($products)->response();
     }
+
+    
 }

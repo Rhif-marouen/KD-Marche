@@ -53,4 +53,5 @@ public function scopeFilter($query, array $filters)
     {
         return $this->hasMany(StockHistory::class);
     }
+   
 }

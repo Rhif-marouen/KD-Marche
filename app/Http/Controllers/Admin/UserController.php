@@ -95,4 +95,21 @@ class UserController extends Controller
 
         return (new UserResource($user))->response();
     }
+
+    /*
+public function activateSubscription(Request $request, User $user)
+{
+    $this->authorize('manageSubscription', $user);
+
+    // Créer un abonnement lié à l'utilisateur
+    $subscription = $user->subscriptions()->create([
+        'status' => 'active',
+        'amount' => 10.00, // Exemple
+        'start_date' => now(),
+        'end_date' => now()->addYear(),
+        'payment_method' => 'stripe'
+    ]);
+
+    return new SubscriptionResource($subscription);
+} */
 }
