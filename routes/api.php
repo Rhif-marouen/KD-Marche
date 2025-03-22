@@ -6,6 +6,7 @@ use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\CategoryController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -23,6 +24,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::prefix('auth')->middleware('auth:sanctum')->group(function () { 
     Route::post('/logout', [AuthController::class, 'logout']);
 });
+Route::get('/categories', [CategoryController::class, 'index']);
 
 
 /*
@@ -37,4 +39,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::apiResource('/products', AdminProductController::class);
     Route::apiResource('/users', UserController::class);
     Route::get('/stats', [AdminDashboardController::class, 'stats']);
+    Route::get('/products/{id}', [AdminProductController::class, 'show']);
+    
 });
