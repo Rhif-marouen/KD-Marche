@@ -16,6 +16,7 @@ class ProductResource extends JsonResource
             'category_id' => $this->category_id,
             'category' => $this->category->name,
             'description' => $this->description,
+            'quality' => $this->quality,
             'image_url' => $this->image_url,
             'created_at' => $this->created_at->toIso8601String()
         ];
