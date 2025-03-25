@@ -5,15 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable,Billable;
+
+    public function createAsStripeCustomer(array $options = [])
+    {
+        return \Stripe\Customer::create($options, [
+            'api_key' => config('services.stripe.secret')
+        ]);
+    }
 
     public function isAdmin(): bool
 {
-    return $this->is_admin; // Vérifie la colonne `is_admin` de la table `users`
+    return $this->is_admin;
 }
 
     protected $fillable = [
@@ -21,7 +29,9 @@ class User extends Authenticatable
         'email',
         'password',
         'is_active',
-        'is_admin'
+        'is_admin',
+        'stripe_id',
+        'subscription_end_at',
     ];
 
     protected $hidden = [
@@ -35,11 +45,11 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
-            'is_admin' => 'boolean'
+            'is_admin' => 'boolean',
         ];
     }
 
-    // Relations
+
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);
@@ -68,6 +78,14 @@ class User extends Authenticatable
             ->where('end_date', '>', now())
             ->exists();
     }
+
+    public function subscribed($subscription = 'default')
+{
+    return $this->subscriptions()
+                ->where('stripe_status', 'active')
+                ->where('name', $subscription)
+                ->exists();
+}
 
     // Vérification du rôle admin
     public function isAdministrator()

@@ -11,7 +11,7 @@ use App\Policies\UserPolicy;
 use App\Observers\ProductObserver;
 use App\Models\StockHistory; 
 use Illuminate\Http\Resources\Json\JsonResource;
-
+use Stripe\Stripe;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         // Dans AppServiceProvider.php
         JsonResource::withoutWrapping();
+        Stripe::setApiKey(config('stripe.secret'));
        
     }    
 
@@ -52,5 +53,7 @@ public function updated(Product $product)
     }
     
 }
+
+
 
 }

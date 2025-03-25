@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\Api\SubscriptionController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -41,4 +42,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/stats', [AdminDashboardController::class, 'stats']);
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
     
+});
+
+Route::prefix('subscription')->group(function () {
+    Route::post('/create', [SubscriptionController::class, 'createSubscription'])
+         ->middleware('auth:sanctum');
+    
+    Route::post('/webhook', [SubscriptionController::class, 'handleWebhook']);
 });

@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-
+use App\Services\StripeService;
 class AuthController extends Controller
 {
-    // Enregistrement d'un nouvel utilisateur
+   /*
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -28,47 +28,51 @@ class AuthController extends Controller
             'name'      => $request->name,
             'email'     => $request->email,
             'password'  => Hash::make($request->password),
-            'is_active' => true, 
+            'is_active' => false, 
             'is_admin'  => false,
         ]);
 
-        // Création d'un token d'accès via Sanctum
-        $token = $user->createToken('authToken')->plainTextToken;
-
+        $checkoutUrl = app(StripeService::class)->createSubscription($user);
+    
         return response()->json([
-            'user'  => $user,
-            'token' => $token
+            'user' => $user,
+            'payment_required' => true,
+            'checkout_url' => $checkoutUrl
         ], 201);
-    }
 
-    // Connexion de l'utilisateur
-  /*  public function login(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email'    => 'required|string|email',
-            'password' => 'required|string'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $user = User::where('email', $request->email)->first();
-
-        // Vérification de l'utilisateur, du mot de passe et du statut actif
-        if (!$user || !Hash::check($request->password, $user->password) || !$user->is_active ) {
-            return response()->json(['message' => 'Identifiants invalides ou compte désactivé'], 401);
-        } 
-
-        // Création du token
-        $token = $user->createToken('authToken')->plainTextToken;
-
-        return response()->json([
-            'user'  => $user,
-            'token' => $token,
-            
-        ], 200);
+      
     } */
+
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+    
+        try {
+            $user = User::create($validated);
+            
+            // Création du client Stripe
+            $stripeService = new StripeService();
+            $stripeCustomer = $stripeService->createCustomer($validated);
+            
+            $user->stripe_id = $stripeCustomer->id;
+            $user->save();
+    
+            return response()->json([
+                'user' => $user,
+                'token' => $user->createToken('auth-token')->plainTextToken
+            ], 201);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors de la création du compte',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function login(Request $request)
     {
