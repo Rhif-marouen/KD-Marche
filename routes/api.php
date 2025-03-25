@@ -50,3 +50,7 @@ Route::prefix('subscription')->group(function () {
     
     Route::post('/webhook', [SubscriptionController::class, 'handleWebhook']);
 });
+
+Route::get('/storage/{path}', function ($path) {
+    return response()->file(storage_path('app/public/' . $path));
+})->where('path', '.*');
