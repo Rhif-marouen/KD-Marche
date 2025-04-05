@@ -12,15 +12,24 @@ class ProductRequest extends FormRequest
     }
 
     public function rules()
-    {
-        return [
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0.01',
-            'stock' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable|string|max:1000',
-            'quality' => 'required|in:A,B,C,D,E',
-            'image_url' => 'nullable|url|max:255'
-        ];
+{
+    $rules = [
+        'name' => 'required|string|max:255',
+        'price' => 'required|numeric|min:0.01',
+        'category_id' => 'required|exists:categories,id',
+        'stock' => 'required|integer|min:0',
+        'description' => 'required|string',
+        'quality' => 'required|in:A,B,C,D,E',
+    ];
+
+    // Rendre l'image obligatoire seulement pour la création
+    if ($this->isMethod('POST')) {
+        $rules['image'] = 'required|image|mimes:jpeg,png,jpg|max:5120';
+    } else {
+        $rules['image'] = 'sometimes|image|mimes:jpeg,png,jpg|max:5120';
     }
+
+    return $rules;
+}
+    
 }

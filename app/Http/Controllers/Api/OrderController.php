@@ -21,6 +21,9 @@ class OrderController extends Controller
 
             foreach ($request->items as $item) {
                 $product = Product::find($item['product_id']);
+                if ($product->stock < $item['quantity']) {
+                    abort(422, "Stock insuffisant pour {$product->name}");
+                }
                 $product->decrement('stock', $item['quantity']);
                 
                 $order->items()->create([

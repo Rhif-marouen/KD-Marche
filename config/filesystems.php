@@ -28,20 +28,19 @@ return [
     |
     */
 
-    'disks' => [
-
-        'local' => [
-            'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'serve' => true,
-            'throw' => false,
-            'report' => false,
-        ],
+'disks' => [
+    'public' => [
+        'driver' => 'local',
+        'root' => storage_path('app/public'),
+        'url' => env('APP_URL').'/storage', // Doit pointer vers /storage
+        'visibility' => 'public',
+    ],
+],
 
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL').'/api/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -60,7 +59,7 @@ return [
             'report' => false,
         ],
 
-    ],
+    
 
     /*
     |--------------------------------------------------------------------------

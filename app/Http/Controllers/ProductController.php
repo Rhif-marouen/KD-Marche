@@ -7,64 +7,73 @@ use App\Http\Requests\ProductRequest;
 use App\Http\Resources\ProductResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-use App\Http\Resources\PublicProductResource;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
+
 class ProductController extends Controller
 {
     public function __construct()
     {
         $this->middleware(['auth:sanctum', 'admin'])->only(['store', 'update', 'destroy', 'adjustStock']);
-        //$this->middleware(['auth:sanctum'])->only(['addToCart']);
     }
 
-    // Ajouter dans app/Http/Controllers/ProductController.php
-public function index()
-{
-    $products = Product::with('category')
-        ->where('stock', '>', 0)
-        ->paginate(12);
+    // Pour la liste des produits publics
+    public function index()
+    {
+        $products = Product::with('category')
+            ->where('stock', '>', 0)
+            ->paginate(12);
 
-    return ProductResource::collection($products);
-}
+        return ProductResource::collection($products);
+    }
 
-// Version admin protégée
-public function adminIndex()
-{
-    $this->authorize('view-admin', Product::class);
-    return ProductResource::collection(Product::with('stockHistory')->paginate(12));
-}
+    // Version admin protégée
+    public function adminIndex()
+    {
+        $this->authorize('view-admin', Product::class);
+        return ProductResource::collection(Product::with('stockHistory')->paginate(12));
+    }
 
     /**
-     * @OA\Post(
-     *     path="/api/products",
-     *     summary="Créer un nouveau produit",
-     *     security={ {"sanctum": {} }},
-     *     @OA\Response(response=201, description="Produit créé"),
-     *     @OA\Response(response=403, description="Non autorisé")
-     * )
+     * Créer un nouveau produit
      */
     public function store(ProductRequest $request): JsonResponse
     {
-        $product = Product::create($request->validated());
+        Log::info('File received: ' . $request->hasFile('image'));
 
+        if ($request->hasFile('image')) {
+            Log::info('File name: ' . $request->file('image')->getClientOriginalName());
+        }
+        
+        // Récupération des données validées
+        $validated = $request->validated();
+        
+        // Traitement du fichier image
+        if ($request->hasFile('image')) {
+            // Stockage du fichier dans le dossier "products" du disque "public"
+            $path = $request->file('image')->store('products', 'public');
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
+            $storage = Storage::disk('public');
+            // Génération de l'URL accessible publiquement
+            $validated['image_url'] = $storage->url($path);
+        }
+        
+        $product = Product::create($validated);
+        
         return (new ProductResource($product->load('category')))
             ->response()
             ->setStatusCode(201);
+            try {
+                $path = $request->file('image')->store('products', 'public');
+            } catch (\Exception $e) {
+                Log::error('Échec du stockage : '.$e->getMessage());
+                abort(500, 'Erreur de stockage du fichier');
+            }
     }
 
     /**
-     * @OA\Get(
-     *     path="/api/products/{id}",
-     *     summary="Afficher un produit spécifique",
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Détails du produit"),
-     *     @OA\Response(response=404, description="Produit non trouvé")
-     * )
+     * Afficher un produit spécifique
      */
     public function show(Product $product): JsonResponse
     {
@@ -72,75 +81,61 @@ public function adminIndex()
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/products/{id}",
-     *     summary="Mettre à jour un produit",
-     *     security={ {"sanctum": {} }},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Produit mis à jour"),
-     *     @OA\Response(response=403, description="Non autorisé")
-     * )
+     * Mettre à jour un produit
      */
     public function update(ProductRequest $request, Product $product): JsonResponse
     {
-        $product->update($request->validated());
-
+        $validated = $request->validated();
+        
+        // Si une nouvelle image est fournie, supprimer l'ancienne et stocker la nouvelle
+        if ($request->hasFile('image')) {
+            // Suppression de l'ancienne image si elle existe
+            if ($product->image_url) {
+                // On extrait le chemin relatif depuis l'URL (en supposant que l'URL est de type APP_URL/storage/...)
+                $oldPath = str_replace(env('APP_URL').'/storage/', '', $product->image_url);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                } else {
+                    Log::warning("L'ancien fichier n'existe pas: $oldPath");
+                }
+            }
+            
+            // Stockage de la nouvelle image
+            $path = $request->file('image')->store('products', 'public');
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $publicDisk */
+            $publicDisk = Storage::disk('public');
+            $validated['image_url'] = $publicDisk->url($path);
+        }
+        
+        $product->update($validated);
+        
         return (new ProductResource($product->fresh()->load('category')))->response();
     }
 
     /**
-     * @OA\Delete(
-     *     path="/api/products/{id}",
-     *     summary="Supprimer un produit",
-     *     security={ {"sanctum": {} }},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Produit supprimé"),
-     *     @OA\Response(response=403, description="Non autorisé")
-     * )
+     * Supprimer un produit
      */
- public function destroy(Product $product)
-{
-    try {
-        $this->authorize('delete', $product);
-        $product->delete();
-        return response()->json([
-            'success' => true,
-            'message' => 'Produit supprimé.',
-            'deleted_id' => $product->id
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Échec de la suppression.',
-            'error' => $e->getMessage()
-        ], 500);
+    public function destroy(Product $product)
+    {
+        try {
+            $this->authorize('delete', $product);
+            $product->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Produit supprimé.',
+                'deleted_id' => $product->id
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Échec de la suppression.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     /**
-     * @OA\Post(
-     *     path="/api/products/{id}/adjust-stock",
-     *     summary="Ajuster le stock manuellement",
-     *     security={ {"sanctum": {} }},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"quantity","type"},
-     *             @OA\Property(property="quantity", type="integer"),
-     *             @OA\Property(property="type", type="string", enum={"in","out"})
-     *         )
-     *     )
-     * )
+     * Ajuster le stock manuellement
      */
     public function adjustStock(Request $request, Product $product): JsonResponse
     {
@@ -149,7 +144,7 @@ public function adminIndex()
             'type' => 'required|in:in,out'
         ]);
 
-        $quantity = $request->type === 'in' 
+        $quantity = $request->type === 'in'
             ? $product->stock + $request->quantity
             : $product->stock - $request->quantity;
 
@@ -159,17 +154,7 @@ public function adminIndex()
     }
 
     /**
-     * @OA\Get(
-     *     path="/api/products/search",
-     *     summary="Recherche de produits",
-     *     @OA\Parameter(
-     *         name="query",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(response=200, description="Résultats de recherche")
-     * )
+     * Recherche de produits
      */
     public function search(Request $request): JsonResponse
     {
@@ -182,6 +167,4 @@ public function adminIndex()
 
         return ProductResource::collection($products)->response();
     }
-
-    
 }

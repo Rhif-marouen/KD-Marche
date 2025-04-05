@@ -44,6 +44,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     
 });
 
+Route::get('/storage/{path}', function ($path) {
+    return response()->file(storage_path('app/public/' . $path));
+})->where('path', '.*');
+
 Route::prefix('subscription')->group(function () {
     Route::post('/create', [SubscriptionController::class, 'createSubscription'])
          ->middleware('auth:sanctum');
@@ -51,6 +55,3 @@ Route::prefix('subscription')->group(function () {
     Route::post('/webhook', [SubscriptionController::class, 'handleWebhook']);
 });
 
-Route::get('/storage/{path}', function ($path) {
-    return response()->file(storage_path('app/public/' . $path));
-})->where('path', '.*');

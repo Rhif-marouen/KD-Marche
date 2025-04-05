@@ -34,10 +34,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
-    'stripe' => [
+ 'stripe' => [
     'key' => env('STRIPE_KEY'),
     'secret' => env('STRIPE_SECRET'),
+    'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
 ],
+
+
 
 ];
