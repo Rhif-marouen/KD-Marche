@@ -2,6 +2,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -18,6 +19,7 @@ Route::prefix('public')->group(function () {
     Route::get('/products', [PublicProductController::class, 'index']);
     Route::get('/products/{id}', [PublicProductController::class, 'show']);
 });
+Route::middleware('auth:sanctum')->get('/products', [ProductController::class, 'index']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user()->load('roles');

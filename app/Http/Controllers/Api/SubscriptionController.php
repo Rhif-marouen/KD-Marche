@@ -63,6 +63,7 @@ class SubscriptionController extends Controller
 
             $user->stripe_id = $customer->id;
             $user->subscription_end_at = Carbon::now()->addYear(); 
+            echo $user->subscription_end_at;
             $user->save();
             
         }

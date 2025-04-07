@@ -52,12 +52,17 @@ class AuthController extends Controller
         ]);
     
         try {
-            $user = User::create($validated);
+            $user = User::create([
+                'name'       => $validated['name'],
+                'email'      => $validated['email'],
+                'password'   => Hash::make($validated['password']),
+                'is_active'  => false, 
+                'is_admin'   => false,
+            ]);
             
             // Création du client Stripe
             $stripeService = new StripeService();
             $stripeCustomer = $stripeService->createCustomer($validated);
-            
             $user->stripe_id = $stripeCustomer->id;
             $user->save();
     
@@ -93,7 +98,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'is_admin' => (bool)$user->is_admin // Conversion explicite
+                'is_admin' => (bool)$user->is_admin,
+                'is_active'=> (bool)$user->is_active // Conversion explicite
             ]
         ]);
     }

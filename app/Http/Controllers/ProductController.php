@@ -19,13 +19,24 @@ class ProductController extends Controller
     }
 
     // Pour la liste des produits publics
-    public function index()
+    public function index(Request $request) 
     {
+        // Vérification de l'abonnement de l'utilisateur
+        // Si l'utilisateur n'est pas authentifié ou n'a pas d'abonnement actif, on renvoie une erreur 403
+    
+         // Vérifier l'authentification ET l'abonnement
+    if (!$request->user() || !$request->user()->is_active) {
+        return response()->json([
+            'message' => 'Abonnement actif requis',
+            'user_active' => $request->user()?->is_active // Debug
+        ], 403);
+    }
+
         $products = Product::with('category')
             ->where('stock', '>', 0)
             ->paginate(12);
 
-        return ProductResource::collection($products);
+            return ProductResource::collection(Product::paginate(12));
     }
 
     // Version admin protégée

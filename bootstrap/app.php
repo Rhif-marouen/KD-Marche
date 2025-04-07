@@ -16,7 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
            // Enregistrement du middleware de route
            $middleware->alias([
-            'admin' => \App\Http\Middleware\Admin::class, 
+            'admin' => \App\Http\Middleware\Admin::class,
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+ 
         ]);
 
            // Configuration CORS
@@ -27,10 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->appendToGroup('api', [
         \Illuminate\Http\Middleware\HandleCors::class,
     ]);
+    
 
   
         
-       
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
