@@ -20,6 +20,7 @@ class ProductRequest extends FormRequest
         'stock' => 'required|integer|min:0',
         'description' => 'required|string',
         'quality' => 'required|in:A,B,C,D,E',
+        
     ];
 
     // Rendre l'image obligatoire seulement pour la création

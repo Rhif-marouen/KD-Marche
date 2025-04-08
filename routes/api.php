@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\OrderController;
+use Illuminate\Support\Facades\File;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -28,7 +30,9 @@ Route::prefix('auth')->middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 Route::get('/categories', [CategoryController::class, 'index']);
-
+// routes/api.php
+Route::post('/orders', [OrderController::class, 'store'])
+  ->middleware('auth:sanctum');
 
 /*
 Route::middleware('auth:sanctum')->group(function () {
@@ -45,10 +49,20 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
     
 });
+// routes/api.php
+Route::get('/products/{product}', [ProductController::class, 'show'])
+    ->middleware('auth:sanctum')
+    ->name('products.show');
 
-Route::get('/storage/{path}', function ($path) {
-    return response()->file(storage_path('app/public/' . $path));
-})->where('path', '.*');
+    Route::get('/storage/{path}', function ($path) {
+        $path = storage_path('app/public/' . $path);
+        
+        if (!File::exists($path)) {
+            abort(404);
+        }
+    
+        return response()->file($path);
+    })->where('path', '.*');
 
 Route::prefix('subscription')->group(function () {
     Route::post('/create', [SubscriptionController::class, 'createSubscription'])

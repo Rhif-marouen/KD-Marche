@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Filesystem\FilesystemAdapter;
 
 class ProductController extends Controller
 {
@@ -46,42 +46,7 @@ class ProductController extends Controller
         return ProductResource::collection(Product::with('stockHistory')->paginate(12));
     }
 
-    /**
-     * Créer un nouveau produit
-     */
-    public function store(ProductRequest $request): JsonResponse
-    {
-        Log::info('File received: ' . $request->hasFile('image'));
-
-        if ($request->hasFile('image')) {
-            Log::info('File name: ' . $request->file('image')->getClientOriginalName());
-        }
-        
-        // Récupération des données validées
-        $validated = $request->validated();
-        
-        // Traitement du fichier image
-        if ($request->hasFile('image')) {
-            // Stockage du fichier dans le dossier "products" du disque "public"
-            $path = $request->file('image')->store('products', 'public');
-            /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
-            $storage = Storage::disk('public');
-            // Génération de l'URL accessible publiquement
-            $validated['image_url'] = $storage->url($path);
-        }
-        
-        $product = Product::create($validated);
-        
-        return (new ProductResource($product->load('category')))
-            ->response()
-            ->setStatusCode(201);
-            try {
-                $path = $request->file('image')->store('products', 'public');
-            } catch (\Exception $e) {
-                Log::error('Échec du stockage : '.$e->getMessage());
-                abort(500, 'Erreur de stockage du fichier');
-            }
-    }
+   
 
     /**
      * Afficher un produit spécifique
