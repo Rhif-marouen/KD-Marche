@@ -39,7 +39,6 @@ class SubscriptionController extends Controller
  */
     $user = Auth::user();
     Stripe::setApiKey(env('STRIPE_SECRET'));
-    
     $validated = $request->validate([
         'payment_method' => 'required|string',
     ]);
@@ -62,8 +61,10 @@ class SubscriptionController extends Controller
             ]);
 
             $user->stripe_id = $customer->id;
-            $user->subscription_end_at = Carbon::now()->addYear(); 
-            echo $user->subscription_end_at;
+            $user->update([
+                'is_active' => 1,
+                'subscription_end_at' => now()->addYear() // Exemple : 1 an
+            ]);
             $user->save();
             
         }
@@ -75,7 +76,8 @@ class SubscriptionController extends Controller
                 'price' => env('STRIPE_PRICE_ID'), // Prix configuré dans le dashboard Stripe
             ]],
             'payment_behavior' => 'default_incomplete',
-            'expand' => ['latest_invoice.payment_intent']
+            'expand' => ['latest_invoice.payment_intent'],
+           
         ]);
 
         return response()->json([
