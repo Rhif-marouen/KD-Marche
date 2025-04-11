@@ -17,11 +17,9 @@ class StockHistory extends Model
      */
     protected $fillable = [
         'product_id',
-        'quantity_change',   // Quantité changée
-        'operation_type',    // Type d'opération (ajout/soustraction)
-        'note',              // Note additionnelle
-        'old_stock',         // Stock avant l'opération
-        'new_stock'          // Nouveau stock après l'opération
+        'old_stock',
+        'new_stock',
+        'quantity' // 👈 Ajouter cette ligne
     ];
 
     /**
@@ -37,7 +35,7 @@ class StockHistory extends Model
      */
     public function setQuantityChangeAttribute($value)
     {
-        $this->attributes['quantity_change'] = (int) $value;
+        $this->attributes['quantity'] = (int) $value;
     }
 
     /**

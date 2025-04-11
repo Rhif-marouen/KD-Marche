@@ -31,8 +31,9 @@ Route::prefix('auth')->middleware('auth:sanctum')->group(function () {
 });
 Route::get('/categories', [CategoryController::class, 'index']);
 // routes/api.php
-Route::post('/orders', [OrderController::class, 'store'])
-  ->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']);
+});
 
 /*
 Route::middleware('auth:sanctum')->group(function () {
@@ -47,7 +48,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::apiResource('/users', UserController::class);
     Route::get('/stats', [AdminDashboardController::class, 'stats']);
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
-    
+    Route::get('/orders', [OrderController::class, 'adminIndex']);
 });
 // routes/api.php
 Route::get('/products/{product}', [ProductController::class, 'show'])
@@ -63,7 +64,7 @@ Route::get('/products/{product}', [ProductController::class, 'show'])
     
         return response()->file($path);
     })->where('path', '.*');
-
+   
 Route::prefix('subscription')->group(function () {
     Route::post('/create', [SubscriptionController::class, 'createSubscription'])
          ->middleware('auth:sanctum');
