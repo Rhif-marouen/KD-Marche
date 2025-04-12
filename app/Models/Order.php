@@ -11,9 +11,17 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
-        'total',
-        'status'
+        'total', 
+        'status', 
+        'delivery_status', 
+        'stripe_payment_id',
+        'created_at',
     ];
+    public function getIsOverdueAttribute()
+{
+    return $this->created_at->diffInHours(now()) > 72 
+           && $this->delivery_status === 'pending';
+}
 
     protected $casts = [
         'status' => OrderStatus::class // Cast correct

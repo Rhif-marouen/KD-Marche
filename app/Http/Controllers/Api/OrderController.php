@@ -88,4 +88,30 @@ class OrderController extends Controller
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
+public function index()
+{
+    return Order::with(['user', 'items.product'])
+        ->select(['id', 'user_id', 'total', 'status', 'delivery_status', 'created_at'])
+        ->whereHas('user')
+        ->paginate(10);
+}
+public function updateDeliveryStatus(Order $order, Request $request)
+{
+    $request->validate([
+        'delivery_status' => 'required|in:pending,delivered,canceled'
+    ]);
+
+    // Vérification du statut de paiement
+    if($order->status !== 'paid') {
+        return response()->json(['error' => 'La commande doit être payée'], 400);
+    }
+
+    $order->update(['delivery_status' => $request->delivery_status]);
+
+    return response()->json([
+        'message' => 'Statut de livraison mis à jour',
+        'order' => new OrderResource($order->load('user', 'items.product'))
+    ]);
+}
 }

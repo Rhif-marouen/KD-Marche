@@ -48,8 +48,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::apiResource('/users', UserController::class);
     Route::get('/stats', [AdminDashboardController::class, 'stats']);
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
-    Route::get('/orders', [OrderController::class, 'adminIndex']);
-});
+    Route::get('/orders', [OrderController::class, 'index']); // Liste des commandes
+    Route::get('/orders/{order}', [OrderController::class, 'show']); // Détail d'une commande
+    Route::put('/orders/{order}/delivery-status', [OrderController::class, 'updateDeliveryStatus']);
+    });
 // routes/api.php
 Route::get('/products/{product}', [ProductController::class, 'show'])
     ->middleware('auth:sanctum')
