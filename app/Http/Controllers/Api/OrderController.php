@@ -22,7 +22,9 @@ class OrderController extends Controller
     $request->validate([
         'items' => 'required|array',
         'items.*.id' => 'required|exists:products,id',
-        'items.*.quantity' => 'required|integer|min:1'
+        'items.*.quantity' => 'required|integer|min:1',
+        'phone' => 'required|string|max:20', // Ajouté
+        'address' => 'required|json'
     ]);
 
     try {
@@ -48,6 +50,8 @@ class OrderController extends Controller
 
         $order = Order::create([
            'user_id' => Auth::id(),
+           'phone' => $request->phone, 
+           'address' => $request->address,
             'total' => $total,
             'status' => 'paid',
             'stripe_payment_id' => $paymentIntent->id
