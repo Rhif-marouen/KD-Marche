@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon; 
-
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Stripe\StripeClient;
 use Illuminate\Support\Facades\Log;
@@ -19,94 +19,96 @@ class SubscriptionController extends Controller
 
     public function __construct()
     {
-        // Assurez-vous que la configuration Stripe est définie dans config/services.php ou config/stripe.php
         Stripe::setApiKey(config('services.stripe.secret'));
         $this->stripe = new StripeClient(config('services.stripe.secret'));
     }
 
-    /**
-     * Crée une souscription en utilisant un PaymentMethod et les informations de l'utilisateur.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function createSubscription(Request $request)
-    
-{   
-
-    /**
- * @var \App\Models\User|null $user
- */
-    $user = Auth::user();
-    Stripe::setApiKey(env('STRIPE_SECRET'));
-    $validated = $request->validate([
-        'payment_method' => 'required|string',
-    ]);
-
-    try {
-        
-        Log::info('Création d\'abonnement pour utilisateur:', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'payment_method' => $validated['payment_method'],
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $validated = $request->validate([
+            'payment_method' => 'required|string',
         ]);
 
-        if (!$user->stripe_id) {
-            $customer = Customer::create([
-                'email' => $user->email,
-                'payment_method' => $validated['payment_method'],
-                'invoice_settings' => [
-                    'default_payment_method' => $validated['payment_method']
-                ]
+        try {
+            // Création du client Stripe si inexistant
+            if (!$user->stripe_id) {
+                $customer = Customer::create([
+                    'email' => $user->email,
+                    'payment_method' => $validated['payment_method'],
+                    'invoice_settings' => [
+                        'default_payment_method' => $validated['payment_method']]
+                ]);
+                $user->stripe_id = $customer->id;
+                $user->save();
+            }
+
+            // Création de l'abonnement
+            $subscription = Subscription::create([
+                'customer' => $user->stripe_id,
+                'items' => [[
+                    'price' => env('STRIPE_PRICE_ID'),
+                ]],
+                'payment_behavior' => 'default_incomplete',
+                'payment_settings' => ['save_default_payment_method' => 'on_subscription'],
+                'expand' => ['latest_invoice.payment_intent'],
             ]);
 
-            $user->stripe_id = $customer->id;
-            $user->update([
-                'is_active' => 1,
-                'subscription_end_at' => now()->addYear() // Exemple : 1 an
+            return response()->json([
+                'subscription_id' => $subscription->id,
+                'client_secret' => $subscription->latest_invoice->payment_intent->client_secret
             ]);
-            $user->save();
-            
+
+        } catch (\Exception $e) {
+            Log::error('Erreur de souscription : ' . $e->getMessage());
+            return response()->json(['error' => 'Échec de la création de l\'abonnement'], 500);
         }
-
-        // Créer l'abonnement
-        $subscription = Subscription::create([
-            'customer' => $user->stripe_id,
-            'items' => [[
-                'price' => env('STRIPE_PRICE_ID'), // Prix configuré dans le dashboard Stripe
-            ]],
-            'payment_behavior' => 'default_incomplete',
-            'expand' => ['latest_invoice.payment_intent'],
-           
-        ]);
-
-        return response()->json([
-            'subscription_id' => $subscription->id,
-            'client_secret' => $subscription->latest_invoice->payment_intent->client_secret
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Erreur lors de la création de l’abonnement Stripe:', [
-            'error' => $e->getMessage(),
-            'user_id' => $user->id,
-        ]);
     }
-}
 
-    /**
-     * Gère les webhooks envoyés par Stripe.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function handleWebhook(Request $request)
     {
-        // Vous pouvez vérifier la signature du webhook ici si besoin
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
+        $endpointSecret = config('services.stripe.webhook_secret');
 
-        // Par exemple, enregistrez l'événement dans les logs pour déboguer
-        Log::info('Stripe Webhook Event:', $request->all());
+        try {
+            $event = \Stripe\Webhook::constructEvent(
+                $payload,
+                $sigHeader,
+                $endpointSecret
+            );
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Signature invalide'], 403);
+        }
 
-        // Répondre à Stripe pour confirmer la réception du webhook
-        return response()->json(['message' => 'Webhook reçu'], 200);
+        switch ($event->type) {
+            case 'invoice.payment_succeeded':
+                $subscriptionId = $event->data->object->subscription;
+                $subscription = Subscription::retrieve($subscriptionId);
+                
+                $user = User::where('stripe_id', $subscription->customer)->first();
+                if ($user) {
+                    $user->update([
+                        'is_active' => true,
+                        'subscription_end_at' => Carbon::createFromTimestamp($subscription->current_period_end)
+                    ]);
+                }
+                break;
+
+            case 'customer.subscription.deleted':
+                $subscription = $event->data->object;
+                $user = User::where('stripe_id', $subscription->customer)->first();
+                
+                if ($user) {
+                    $user->update([
+                        'is_active' => false,
+                        'subscription_end_at' => null
+                    ]);
+                }
+                break;
+        }
+
+        return response()->json(['status' => 'success']);
     }
 }

@@ -26,7 +26,9 @@ class Order extends Model
 }
 
     protected $casts = [
-        'status' => OrderStatus::class // Cast correct
+        'status' => OrderStatus::class,
+        'address' => 'array', // Ajout du cast JSON
+        'created_at' => 'datetime' 
     ];
 
     public function user()

@@ -75,7 +75,7 @@ class User extends Authenticatable
     {
         return $this->subscriptions()
             ->where('status', 'active')
-            ->where('end_date', '>', now())
+            ->where('subscription_end_at', '>', now())
             ->exists();
     }
 

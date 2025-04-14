@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\StockHistory;
+use App\Mail\OrderDeliveredMail;
+use Illuminate\Support\Facades\Mail;
+
 class OrderController extends Controller
 {
     public function store(Request $request)
@@ -96,26 +99,36 @@ class OrderController extends Controller
 public function index()
 {
     return Order::with(['user', 'items.product'])
-        ->select(['id', 'user_id', 'total', 'status', 'delivery_status', 'created_at'])
+        ->select(['id', 'user_id', 'total', 'status','address','phone', 'delivery_status', 'created_at'])
         ->whereHas('user')
-        ->paginate(10);
+        ->paginate(12);
 }
 public function updateDeliveryStatus(Order $order, Request $request)
-{
-    $request->validate([
-        'delivery_status' => 'required|in:pending,delivered,canceled'
-    ]);
+    {
+        $request->validate([
+            'delivery_status' => 'required|in:pending,delivered,canceled'
+        ]);
 
-    // Vérification du statut de paiement
-    if($order->status !== 'paid') {
-        return response()->json(['error' => 'La commande doit être payée'], 400);
+        if($order->status !== 'paid') {
+            return response()->json(['error' => 'La commande doit être payée'], 400);
+        }
+
+        $previousStatus = $order->delivery_status;
+        $order->update(['delivery_status' => $request->delivery_status]);
+
+        // Envoi d'email uniquement si le statut passe à "delivered"
+        if ($request->delivery_status === 'delivered' && $previousStatus !== 'delivered') {
+            try {
+                Mail::to($order->user->email)
+                    ->send(new OrderDeliveredMail($order));
+            } catch (\Exception $e) {
+                Log::error('Erreur envoi email livraison: '.$e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => 'Statut de livraison mis à jour'.($request->delivery_status === 'delivered' ? ' et email envoyé' : ''),
+            'order' => new OrderResource($order->load('user', 'items.product'))
+        ]);
     }
-
-    $order->update(['delivery_status' => $request->delivery_status]);
-
-    return response()->json([
-        'message' => 'Statut de livraison mis à jour',
-        'order' => new OrderResource($order->load('user', 'items.product'))
-    ]);
-}
 }
