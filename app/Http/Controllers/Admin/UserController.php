@@ -21,14 +21,17 @@ class UserController extends Controller
     /**
      * Liste paginée des utilisateurs (Admin only)
      */
-    public function index(): JsonResponse
+    public function index(Request $request)
     {
         $this->authorize('viewAny', User::class);
         
         $users = User::with(['subscriptions', 'orders'])
+            ->when($request->email, function($query) use ($request) {
+                return $query->where('email', 'like', '%'.$request->email.'%');
+            })
             ->latest()
-            ->paginate(10);
-
+            ->paginate(12);
+    
         return UserResource::collection($users)->response();
     }
 
@@ -57,13 +60,11 @@ class UserController extends Controller
     /**
      * Mise à jour des informations utilisateur
      */
-    public function update(UserRequest $request, User $user): JsonResponse
+    public function update(UserRequest $request, User $user)
     {
-        $this->authorize('update', $user);
-
+        $this->authorize('update', $user); // <-- Ajoutez cette ligne
         $user->update($request->validated());
-
-        return (new UserResource($user))->response();
+        return new UserResource($user);
     }
 
     /**
@@ -79,22 +80,13 @@ class UserController extends Controller
             'message' => __('User deleted successfully')
         ]);
     }
+    
 
-    /**
-     * Activation d'un abonnement payant
-     */
-    public function activateSubscription(Request $request, User $user): JsonResponse
-    {
-        $this->authorize('manageSubscription', $user);
 
-        // Logique d'activation de l'abonnement
-        $user->update([
-            'is_active' => true,
-            'subscription_end' => now()->addYear()
-        ]);
 
-        return (new UserResource($user))->response();
-    }
+  
+
+
 
     /*
 public function activateSubscription(Request $request, User $user)

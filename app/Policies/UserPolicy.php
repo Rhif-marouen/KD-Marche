@@ -10,14 +10,15 @@ class UserPolicy
     {
         return $authUser->isAdmin();
     }
-
-    public function manageSubscription(User $authUser, User $user)
+    public function update(User $authUser, User $targetUser)
     {
-        return $authUser->isAdmin() || $authUser->id === $user->id;
+        // Autoriser uniquement la modification de son propre profil (sauf is_active)
+        return $authUser->id === $targetUser->id && !request()->has('is_active');
     }
 
     public function delete(User $authUser, User $user)
     {
         return $authUser->isAdmin() && $authUser->id !== $user->id;
     }
+
 }

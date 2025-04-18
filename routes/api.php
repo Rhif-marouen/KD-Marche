@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\OrderController;
 use Illuminate\Support\Facades\File;
 
+Route::middleware('auth:sanctum')->patch('/users/{user}', [UserController::class, 'update']);
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
@@ -51,8 +52,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/orders', [OrderController::class, 'index']); // Liste des commandes
     Route::get('/orders/{order}', [OrderController::class, 'show']); // Détail d'une commande
     Route::put('/orders/{order}/delivery-status', [OrderController::class, 'updateDeliveryStatus']);
-    });
-// routes/api.php
+    Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
+});
+
 Route::get('/products/{product}', [ProductController::class, 'show'])
     ->middleware('auth:sanctum')
     ->name('products.show');
@@ -73,4 +75,7 @@ Route::prefix('subscription')->group(function () {
     
     Route::post('/webhook', [SubscriptionController::class, 'handleWebhook']);
 });
+
+
+
 

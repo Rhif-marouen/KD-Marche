@@ -22,7 +22,9 @@ public function rules()
         'password' => $this->isMethod('POST') 
             ? 'required|min:8|confirmed' 
             : 'nullable|min:8|confirmed',
-        'is_admin' => 'sometimes|boolean'
+        'is_admin' => 'required|boolean',
+        'is_active' => 'sometimes|boolean',
+        'subscription_end_at' => 'sometimes|date'
     ];
 }
 }

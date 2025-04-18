@@ -46,6 +46,9 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'is_admin' => 'boolean' ,
+            'subscription_end_at' => 'datetime',
+            
+            
         ];
     }
 
@@ -70,14 +73,10 @@ class User extends Authenticatable
         return $this->hasMany(Cart::class);
     }
 
-    // Vérification d'abonnement actif
-    public function hasActiveSubscription()
-    {
-        return $this->subscriptions()
-            ->where('status', 'active')
-            ->where('subscription_end_at', '>', now())
-            ->exists();
-    }
+  public function hasActiveSubscription()
+{
+    return $this->is_active && $this->subscription_end_at > now();
+}
 
     public function subscribed($subscription = 'default')
 {

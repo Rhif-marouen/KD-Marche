@@ -99,7 +99,7 @@ class OrderController extends Controller
 public function index()
 {
     return Order::with(['user', 'items.product'])
-        ->select(['id', 'user_id', 'total', 'status','address','phone', 'delivery_status', 'created_at'])
+        ->select(['id', 'user_id', 'total', 'status','address','phone', 'delivery_status', 'created_at', 'updated_at'])
         ->whereHas('user')
         ->paginate(12);
 }
@@ -109,9 +109,15 @@ public function updateDeliveryStatus(Order $order, Request $request)
             'delivery_status' => 'required|in:pending,delivered,canceled'
         ]);
 
-        if($order->status !== 'paid') {
-            return response()->json(['error' => 'La commande doit être payée'], 400);
+        if(!$order->user) {
+            return response()->json(['error' => 'Utilisateur introuvable'], 404);
         }
+
+        $order->update([
+            'delivery_status' => $request->delivery_status,
+            'updated_at' => now() // Force la mise à jour
+        ]);
+
 
         $previousStatus = $order->delivery_status;
         $order->update(['delivery_status' => $request->delivery_status]);
@@ -131,4 +137,16 @@ public function updateDeliveryStatus(Order $order, Request $request)
             'order' => new OrderResource($order->load('user', 'items.product'))
         ]);
     }
+    public function destroy(Order $order)
+{
+    // Supprimez les dépendances d'abord (ex: items)
+    $order->items()->delete();
+    
+    // Puis supprimez la commande
+    $order->delete();
+
+    return response()->json([
+        'message' => 'Commande supprimée avec succès'
+    ]);
+}
 }
