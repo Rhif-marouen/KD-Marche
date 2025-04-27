@@ -119,7 +119,7 @@ public function handleWebhook(Request $request)
                     'subscription_end_at' => $endDate
                 ]);
                 Log::info('[Webhook] User updated: ' . $user->email);
-
+                $user->refresh(); 
             } catch (\Exception $e) {
                 Log::error('[Webhook] Error: ' . $e->getMessage());
             }
@@ -135,6 +135,8 @@ public function handleWebhook(Request $request)
                     'subscription_end_at' => null
                 ]);
             }
+            $user->refresh(); // Après $user->update(...)
+Log::info('User after update', $user->toArray());
             break;
     }
 

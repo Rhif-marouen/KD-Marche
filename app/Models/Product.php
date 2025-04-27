@@ -32,6 +32,7 @@ public function scopeFilter($query, array $filters)
     });
 }
 
+
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -48,6 +49,10 @@ public function scopeFilter($query, array $filters)
         return $this->belongsToMany(Cart::class, 'cart_items')
             ->withPivot('quantity', 'price');
     }
+    public function canBeAddedToCart($quantity)
+{
+    return $this->stock >= $quantity && $this->stock > 0;
+}
 
     public function stockHistory()
     {
