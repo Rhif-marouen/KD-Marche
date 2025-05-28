@@ -80,7 +80,11 @@ class UserController extends Controller
             'message' => __('User deleted successfully')
         ]);
     }
-    
+    public function toggleAdmin(User $user)
+{
+    $user->update(['is_admin' => !$user->is_admin]);
+    return new UserResource($user);
+}
 
 
 

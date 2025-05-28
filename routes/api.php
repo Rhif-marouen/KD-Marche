@@ -54,6 +54,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::put('/orders/{order}/delivery-status', [OrderController::class, 'updateDeliveryStatus']);
     Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
 });
+Route::patch('/admin/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin']);
 
 Route::get('/products/{product}', [ProductController::class, 'show'])
     ->middleware('auth:sanctum')
