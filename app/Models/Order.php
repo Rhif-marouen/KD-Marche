@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\OrderStatus;
@@ -46,4 +45,14 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class);
     }
+    public function getDeliveryStatusAttribute($value)
+{
+    // Marquer comme "overdue" si en attente depuis plus de 72h
+    if ($value === 'pending' && 
+        $this->created_at->diffInHours(now()) > 72) {
+        return 'overdue';
+    }
+    
+    return $value;
+}
 }

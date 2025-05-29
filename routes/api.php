@@ -48,6 +48,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::apiResource('/products', AdminProductController::class);
     Route::apiResource('/users', UserController::class);
     Route::get('/stats', [AdminDashboardController::class, 'stats']);
+    Route::get('/revenue-stats', [AdminDashboardController::class, 'revenueStats']);
+    Route::get('/order-stats', [AdminDashboardController::class, 'orderStats']);
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
     Route::get('/orders', [OrderController::class, 'index']); // Liste des commandes
     Route::get('/orders/{order}', [OrderController::class, 'show']); // Détail d'une commande
